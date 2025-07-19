@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDevById, getDevs, getDevsByTerms } from '../controllers/devsController.js';
+import { getDevById, getDevs, getDevsByTerms, createDev } from '../controllers/devsController.js';
 
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.get("/", (req, res) => {
 });
 
 router.get('/:id', getDevById)
+router.post('/', createDev)
 
 export default router;

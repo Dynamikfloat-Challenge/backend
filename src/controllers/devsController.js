@@ -61,3 +61,40 @@ export const getDevsByTerms = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const createDev = async (req, res) => {
+  const { name, nickname, stack, birth_date } = req.body;
+
+  if (!name || !nickname) {
+    return res.status(422).json({ error: "Name and nickname are required" });
+  }
+  if( typeof(name) !== 'string' || typeof(nickname) !== 'string') {
+    return res.status(400).json({ error: "Name and nickname must be strings" });
+  }
+  if(!Array.isArray(stack) || !stack.every(item => typeof item === 'string')) {
+    return res.status(400).json({ error: "Stack must be an array of strings" });
+  }
+
+  try {
+    const foundDev = await sql`
+        SELECT * FROM devs WHERE nickname = ${nickname}`;
+    if (foundDev.length > 0) {
+      return res
+        .status(422)
+        .json({ error: "Dev with this nickname already exists" });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+
+
+  try {
+    const newDev = await sql`
+      INSERT INTO devs (name, nickname, stack, birth_date)
+      VALUES (${name}, ${nickname}, ${stack}, ${birth_date})
+      RETURNING *`;
+    return res.status(201).json(newDev[0]);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
