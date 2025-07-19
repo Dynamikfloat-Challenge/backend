@@ -7,7 +7,6 @@ import sql from "../config/database.js";
  * @returns list of devs or an error message
  * @throws {Error} if there is an issue with the database query
  */
-
 export const getDevs = async (req, res) => {
   try {
     const data = await sql`SELECT * FROM devs`;
@@ -17,6 +16,12 @@ export const getDevs = async (req, res) => {
   }
 };
 
+/**
+ * Get a dev by ID.
+ * @param {Object} req the request object
+ * @param {Object} res the response object
+ * @returns the dev object or an error message
+ */
 export const getDevById = async (req, res) => {
   try {
     const user = await sql`SELECT * FROM devs WHERE id = ${req.params.id}`;
@@ -24,6 +29,34 @@ export const getDevById = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     return res.status(200).json(user[0]);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+/**
+ * Get devs by search terms.
+ * @param {Object} req the request object
+ * @param {Object} res the response object
+ * @returns the list of devs matching the search terms or an error message
+ */
+export const getDevsByTerms = async (req, res) => {
+  try {
+    const terms = req.query.terms;
+    if (!terms || terms.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Terms query parameter is required" });
+    }
+    const users = await sql`
+        SELECT * FROM devs
+        WHERE name ILIKE ${`%${terms}%`} OR
+        nickname ILIKE ${`%${terms}%`} OR
+        EXISTS (
+            SELECT 1 FROM unnest(stack) AS tech
+            WHERE tech ILIKE ${`%${terms}%`})
+        `;
+    return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
