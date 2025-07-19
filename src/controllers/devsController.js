@@ -28,3 +28,23 @@ export const getDevById = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+export const getDevsByTerms = async (req, res) => {
+    try {
+        const terms = req.query.terms;
+        if (!terms || terms.length === 0) {
+            return res.status(400).json({ error: "Terms query parameter is required" });
+        }
+        const users = await sql`
+        SELECT * FROM devs
+        WHERE name ILIKE ${`%${terms}%`} OR
+        nickname ILIKE ${`%${terms}%`} OR
+        EXISTS (
+            SELECT 1 FROM unnest(stack) AS tech
+            WHERE tech ILIKE ${`%${terms}%`})
+        `
+        return res.status(200).json(users);
+     
+    } catch (error) {
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+} 
